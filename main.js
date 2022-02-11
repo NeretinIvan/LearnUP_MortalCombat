@@ -23,7 +23,7 @@ class Player {
 
     #CreateProgressBar() {
         const $progressBar = document.createElement('div');
-        $progressBar.classList.add('progressBar');
+        $progressBar.classList.add('progressbar');
         $progressBar.append(this.#CreateLife());
         $progressBar.append(this.#CreateName());       
         return $progressBar;
@@ -65,6 +65,6 @@ const player2 = new Player('Sonya', 120, sonyaImage, ['axe', 'sword']);
 player1.Attack();
 player2.Attack();
 
-const $root = document.getElementById('#root');
-$root.append(player1.CreatePlayer('player1'));
-$root.append(player2.CreatePlayer('player2'));
+const $arena = document.getElementsByClassName('arenas')[0];
+$arena.append(player1.CreatePlayer('player1'));
+$arena.append(player2.CreatePlayer('player2'));
