@@ -27,11 +27,11 @@ const player2 = {
 
 //////////////////Init area////////////////////////
 
-const $arena = GetElementOfClass('arenas');
-$arena.append(CreatePlayer('player1', player1));
-$arena.append(CreatePlayer('player2', player2));
+const $arena = document.querySelector('.arenas');
+$arena.append(CreatePlayer(player1));
+$arena.append(CreatePlayer(player2));
 
-const $randomButton = GetElementOfClass('button');
+const $randomButton = document.querySelector('.button');
 $randomButton.addEventListener('click', OnRandomButtonClick);
 
 //////////////////Gameplay logic////////////////////////
@@ -59,13 +59,7 @@ function ChangeHP(player, damage) {
 }
 
 function PlayerDead(player) {
-    let winner = '';
-    if (player.playerID == 1) {
-        winner = player2.name;
-    }
-    else {
-        winner = player1.name;
-    }
+    const winner = player.playerID === 1 ? player2.name : player1.name;
     winString = winner + ' wins!';
     console.log(winString);
 
@@ -76,10 +70,6 @@ function PlayerDead(player) {
 }
 
 //////////////////Code management functions////////////////////////
-
-function GetElementOfClass(elementClass){
-    return document.getElementsByClassName(elementClass)[0];
-}
 
 function CreateMessage(message) {
     const $messageLabel = CreateElement('div', 'loseTitle');
@@ -95,8 +85,8 @@ function CreateElement(tag, elementClass) {
 
 //////////////////Creating player functions////////////////////////
 
-function CreatePlayer(playerID, playerObj) {
-    const $player = CreateElement('div', playerID);
+function CreatePlayer(playerObj) {
+    const $player = CreateElement('div', 'player' + playerObj.playerID);
     $player.append(CreateProgressBar(playerObj));
     $player.append(CreateCharacter(playerObj));
     return $player;
