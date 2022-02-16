@@ -7,10 +7,7 @@ const player1 = {
     hp: 100,
     image: './assets/scorpion.gif',
     weapon: ['knife', 'chain'],
-    Attack: function(target) {
-        console.log(this.name + ' attacks!');
-        ChangeHP(target, GenerateInteger(0, 20));
-    }
+    attack
 }
 
 const player2 = {
@@ -19,107 +16,134 @@ const player2 = {
     hp: 100,
     image: './assets/sonya.gif',
     weapon: ['axe', 'sword'],
-    Attack: function(target) {
-        console.log(this.name + ' attacks!');
-        ChangeHP(target, GenerateInteger(0, 20));
-    }
+    attack
 }
-
-//////////////////Init area////////////////////////
-
-const $arena = document.querySelector('.arenas');
-$arena.append(CreatePlayer(player1));
-$arena.append(CreatePlayer(player2));
-
-const $randomButton = document.querySelector('.button');
-$randomButton.addEventListener('click', OnRandomButtonClick);
 
 //////////////////Gameplay logic////////////////////////
 
-function OnRandomButtonClick () {
-    if (Math.random() > 0.5) {
-        player1.Attack(player2);
-    }
-    else {
-        player2.Attack(player1);
+function attack() {
+    console.log(this.name + ' attacks!');
+    target = getOpponent.call(this);
+    changeHP.call(target, generateInteger(0, 20));
+    renderHP.call(target);
+}
+
+function onRandomButtonClick () {
+    player1.attack();
+    player2.attack();
+    if (player1.hp === 0 || player2.hp === 0) {
+        const result = getFightResult();
+        console.log(result);
+        $arena.append(createMessage(result));
+        $arena.append(createReloadButton());
+        $randomButton.disabled = true;
     }
 }
 
-function GenerateInteger (min, max) {
+function generateInteger (min, max) {
     return Math.ceil(min + Math.random() * (max - min));
 }
 
-function ChangeHP(player, damage) {
-    if (damage > player.hp) damage = player.hp;
-    player.hp -= damage;
-    player.$lifeBar.style.width = player.hp + '%';
-
-    console.log(player.name + " got " + damage + " damage. " + player.hp + " hp left");
-    if (player.hp <= 0) PlayerDead(player);
+function changeHP(damage) {
+    if (damage > this.hp) damage = this.hp;
+    this.hp -= damage;
+    console.log(this.name + " got " + damage + " damage. " + this.hp + " hp left");
 }
 
-function PlayerDead(player) {
-    const winner = player.playerID === 1 ? player2.name : player1.name;
-    winString = winner + ' wins!';
-    console.log(winString);
+function renderHP() {
+    elHP.call(this).style.width = this.hp + '%';  
+}
 
-    winMessage = CreateMessage(winString);
-    $arena.append(winMessage);
+function elHP() {
+    return document.querySelector('.player' + this.playerID + ' .life');
+}
 
-    $randomButton.disabled = true;
+function getOpponent() {
+    return this.playerID === 1 ? player2 : player1;
+}
+
+function getFightResult() {
+    if (player1.hp === player2.hp) {
+        return 'Draw';
+    }
+    const winner = player1.hp > player2.hp ? player1.name : player2.name;
+    return winner + ' wins!';
+}
+
+function restart() {
+    window.location.reload();
 }
 
 //////////////////Code management functions////////////////////////
 
-function CreateMessage(message) {
-    const $messageLabel = CreateElement('div', 'loseTitle');
+function createMessage(message) {
+    const $messageLabel = createElement('div', 'loseTitle');
     $messageLabel.innerText = message;
     return $messageLabel;
 }
 
-function CreateElement(tag, elementClass) {
+function createElement(tag, elementClass) {
     const $element = document.createElement(tag);
     if (elementClass) $element.classList.add(elementClass);
     return $element;
 }
 
-//////////////////Creating player functions////////////////////////
+//////////////////Construction functions////////////////////////
 
-function CreatePlayer(playerObj) {
-    const $player = CreateElement('div', 'player' + playerObj.playerID);
-    $player.append(CreateProgressBar(playerObj));
-    $player.append(CreateCharacter(playerObj));
+function createReloadButton() {
+    $reloadWrap = createElement('div', 'reloadWrap');
+    $reloadButton = createElement('button', 'button');
+
+    $reloadButton.innerText = 'Restart';
+    $reloadButton.addEventListener('click', restart);
+
+    $reloadWrap.append($reloadButton);
+    return $reloadWrap;
+}
+
+function createPlayer(playerObj) {
+    const $player = createElement('div', 'player' + playerObj.playerID);
+    $player.append(createProgressBar(playerObj));
+    $player.append(createCharacter(playerObj));
     return $player;
 }
 
-function CreateProgressBar(playerObj) {
-    const $progressBar = CreateElement('div', 'progressbar');
-    $progressBar.append(CreateLife(playerObj));
-    $progressBar.append(CreateName(playerObj));       
+function createProgressBar(playerObj) {
+    const $progressBar = createElement('div', 'progressbar');
+    $progressBar.append(createLife());
+    $progressBar.append(createName(playerObj));       
     return $progressBar;
 }
 
-function CreateLife(playerObj) {
-    const $life = CreateElement('div', 'life');
+function createLife() {
+    const $life = createElement('div', 'life');
     $life.style.width = '100%';
-    playerObj.$lifeBar = $life;
     return $life;
 }
 
-function CreateName(playerObj) {
-    const $name = CreateElement('div', 'name');
+function createName(playerObj) {
+    const $name = createElement('div', 'name');
     $name.innerText = playerObj.name;
     return $name;
 }
 
-function CreateCharacter(playerObj) {
-    const $character = CreateElement('div', 'character');
-    $character.append(CreateImage(playerObj.image));
+function createCharacter(playerObj) {
+    const $character = createElement('div', 'character');
+    $character.append(createImage(playerObj.image));
     return $character;
 }
 
-function CreateImage(image) {
-    const $image = CreateElement('img');
+function createImage(image) {
+    const $image = createElement('img');
     $image.src = image;
     return $image;
 }
+
+//////////////////Init area////////////////////////
+
+const $arena = document.querySelector('.arenas');
+$arena.append(createPlayer(player1));
+$arena.append(createPlayer(player2));
+
+const $randomButton = document.querySelector('.control .button');
+$randomButton.addEventListener('click', onRandomButtonClick);
