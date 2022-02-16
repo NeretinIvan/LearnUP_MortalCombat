@@ -1,70 +1,125 @@
-const scorpionImage = './assets/scorpion.gif';
-const sonyaImage = './assets/sonya.gif';
 
-class Player {
-    constructor(name, baseHp, img, weapons){
-        this.name = name;
-        this.baseHp = baseHp;
-        this.img = img;
-        this.weapons = weapons;
-    }
+//////////////////Init players////////////////////////
 
-    Attack () {
-        console.log(this.name + " is attacking!");
-    }
-    
-    CreatePlayer (playerId) {
-        const $player = document.createElement('div');
-        $player.classList.add(playerId);
-        $player.append(this.#CreateProgressBar());
-        $player.append(this.#CreateCharacter());
-        return $player;
-    }
-
-    #CreateProgressBar() {
-        const $progressBar = document.createElement('div');
-        $progressBar.classList.add('progressbar');
-        $progressBar.append(this.#CreateLife());
-        $progressBar.append(this.#CreateName());       
-        return $progressBar;
-    }
-
-    #CreateLife() {
-        const $life = document.createElement('div');
-        $life.classList.add('life');
-        $life.style.width = '100%';
-        return $life;
-    }
-
-    #CreateName() {
-        const $name = document.createElement('div');
-        $name.classList.add('name');
-        $name.innerText = this.name;
-        return $name;
-    }
-
-    #CreateCharacter() {
-        const $character = document.createElement('div');
-        $character.classList.add('character');
-        $character.append(this.#CreateImage());
-        return $character;
-    }
-
-    #CreateImage() {
-        const $image = document.createElement('img');
-        $image.src = this.img;
-        return $image;
+const player1 = {
+    playerID: 1,
+    name: 'Scorpion',
+    hp: 100,
+    image: './assets/scorpion.gif',
+    weapon: ['knife', 'chain'],
+    Attack: function(target) {
+        console.log(this.name + ' attacks!');
+        ChangeHP(target, GenerateInteger(0, 20));
     }
 }
 
-/* ******** */
+const player2 = {
+    playerID: 2,
+    name: 'Sonya',
+    hp: 100,
+    image: './assets/sonya.gif',
+    weapon: ['axe', 'sword'],
+    Attack: function(target) {
+        console.log(this.name + ' attacks!');
+        ChangeHP(target, GenerateInteger(0, 20));
+    }
+}
 
-const player1 = new Player('Scorpion', 100, scorpionImage, ['knife', 'chain']);
-const player2 = new Player('Sonya', 120, sonyaImage, ['axe', 'sword']);
+//////////////////Init area////////////////////////
 
-player1.Attack();
-player2.Attack();
+const $arena = document.querySelector('.arenas');
+$arena.append(CreatePlayer(player1));
+$arena.append(CreatePlayer(player2));
 
-const $arena = document.getElementsByClassName('arenas')[0];
-$arena.append(player1.CreatePlayer('player1'));
-$arena.append(player2.CreatePlayer('player2'));
+const $randomButton = document.querySelector('.button');
+$randomButton.addEventListener('click', OnRandomButtonClick);
+
+//////////////////Gameplay logic////////////////////////
+
+function OnRandomButtonClick () {
+    if (Math.random() > 0.5) {
+        player1.Attack(player2);
+    }
+    else {
+        player2.Attack(player1);
+    }
+}
+
+function GenerateInteger (min, max) {
+    return Math.ceil(min + Math.random() * (max - min));
+}
+
+function ChangeHP(player, damage) {
+    if (damage > player.hp) damage = player.hp;
+    player.hp -= damage;
+    player.$lifeBar.style.width = player.hp + '%';
+
+    console.log(player.name + " got " + damage + " damage. " + player.hp + " hp left");
+    if (player.hp <= 0) PlayerDead(player);
+}
+
+function PlayerDead(player) {
+    const winner = player.playerID === 1 ? player2.name : player1.name;
+    winString = winner + ' wins!';
+    console.log(winString);
+
+    winMessage = CreateMessage(winString);
+    $arena.append(winMessage);
+
+    $randomButton.disabled = true;
+}
+
+//////////////////Code management functions////////////////////////
+
+function CreateMessage(message) {
+    const $messageLabel = CreateElement('div', 'loseTitle');
+    $messageLabel.innerText = message;
+    return $messageLabel;
+}
+
+function CreateElement(tag, elementClass) {
+    const $element = document.createElement(tag);
+    if (elementClass) $element.classList.add(elementClass);
+    return $element;
+}
+
+//////////////////Creating player functions////////////////////////
+
+function CreatePlayer(playerObj) {
+    const $player = CreateElement('div', 'player' + playerObj.playerID);
+    $player.append(CreateProgressBar(playerObj));
+    $player.append(CreateCharacter(playerObj));
+    return $player;
+}
+
+function CreateProgressBar(playerObj) {
+    const $progressBar = CreateElement('div', 'progressbar');
+    $progressBar.append(CreateLife(playerObj));
+    $progressBar.append(CreateName(playerObj));       
+    return $progressBar;
+}
+
+function CreateLife(playerObj) {
+    const $life = CreateElement('div', 'life');
+    $life.style.width = '100%';
+    playerObj.$lifeBar = $life;
+    return $life;
+}
+
+function CreateName(playerObj) {
+    const $name = CreateElement('div', 'name');
+    $name.innerText = playerObj.name;
+    return $name;
+}
+
+function CreateCharacter(playerObj) {
+    const $character = CreateElement('div', 'character');
+    $character.append(CreateImage(playerObj.image));
+    return $character;
+}
+
+function CreateImage(image) {
+    const $image = CreateElement('img');
+    $image.src = image;
+    return $image;
+}
