@@ -1,3 +1,15 @@
+//////////////////Global variables////////////////////////
+
+let turn = 1;
+
+//////////////////Constants////////////////////////
+
+const HIT = {
+    head: 30,
+    body: 25,
+    foot: 20,
+}
+const ATTACK = ['head', 'body', 'foot'];
 
 //////////////////Init players////////////////////////
 
@@ -21,27 +33,75 @@ const player2 = {
 
 //////////////////Gameplay logic////////////////////////
 
-function attack() {
-    console.log(this.name + ' attacks!');
-    target = getOpponent.call(this);
-    changeHP.call(target, generateInteger(0, 20));
-    renderHP.call(target);
+function onControlFormSubmit (e) {
+    e.preventDefault();
+
+    console.log('----------TURN ' + turn + '----------');
+    turn++;
+
+    const ourAttackResult = ourAttack();
+    const enemyAttackResult = enemyAttack();
+    tryAttack.call(player1, ourAttackResult, enemyAttackResult);
+    tryAttack.call(player2, enemyAttackResult, ourAttackResult);
+
+    for (let item of $controlForm) {
+        item.checked = false;
+    }
+
+    checkGameOver();
 }
 
-function onRandomButtonClick () {
-    player1.attack();
-    player2.attack();
-    if (player1.hp === 0 || player2.hp === 0) {
-        const result = getFightResult();
-        console.log(result);
-        $arena.append(createMessage(result));
-        $arena.append(createReloadButton());
-        $randomButton.disabled = true;
+function ourAttack() {
+    const ourAttackResult = {};
+
+    for (let item of $controlForm) {
+        if (item.checked && item.name === 'hit') {
+            ourAttackResult.hit = item.value;
+            ourAttackResult.value = generateInteger(1, HIT[item.value]);
+        }
+        if (item.checked && item.name === 'defence') {
+            ourAttackResult.defence = item.value;
+        }
+    }
+
+    return ourAttackResult;
+}
+
+function enemyAttack() {
+    const hit = ATTACK[generateInteger(0, 2)];
+    const defence = ATTACK[generateInteger(0, 2)];
+    return {
+        value: generateInteger(1, HIT[hit]),
+        hit,
+        defence
     }
 }
 
-function generateInteger (min, max) {
-    return Math.ceil(min + Math.random() * (max - min));
+function tryAttack(myAttack, opponentAttack) {
+    console.log(this.name + ' attacks!');
+
+    if (myAttack.hit != opponentAttack.defence) {
+        this.attack(myAttack);
+    }
+    else {
+        console.log(getOpponent.call(this).name + ' blocked attack on ' + myAttack.hit + '!');
+    }
+}
+
+function attack(attackStats) {
+    target = getOpponent.call(this);
+    changeHP.call(target, attackStats.value);
+    renderHP.call(target);
+}
+
+function getOpponent() {
+    return this.playerID === 1 ? player2 : player1;
+}
+
+function generateInteger(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 function changeHP(damage) {
@@ -58,8 +118,16 @@ function elHP() {
     return document.querySelector('.player' + this.playerID + ' .life');
 }
 
-function getOpponent() {
-    return this.playerID === 1 ? player2 : player1;
+function checkGameOver() {
+    if (player1.hp === 0 || player2.hp === 0) {
+        const result = getFightResult();
+        console.log(result);
+        $arena.append(createMessage(result));
+        $arena.append(createReloadButton());
+        for (let item of $controlForm) {
+            item.disabled = true;
+        }
+    }
 }
 
 function getFightResult() {
@@ -100,6 +168,11 @@ function createReloadButton() {
     $reloadWrap.append($reloadButton);
     return $reloadWrap;
 }
+
+/* Вопрос
+Стоит ли мне оставить создание игрока в виде множества разбитых функций для удобства чтения кода и
+гибкости архитектуры, или все-же собрать в одну функцию для компактности кода?
+*/
 
 function createPlayer(playerObj) {
     const $player = createElement('div', 'player' + playerObj.playerID);
@@ -145,5 +218,5 @@ const $arena = document.querySelector('.arenas');
 $arena.append(createPlayer(player1));
 $arena.append(createPlayer(player2));
 
-const $randomButton = document.querySelector('.control .button');
-$randomButton.addEventListener('click', onRandomButtonClick);
+const $controlForm = document.querySelector('.control');
+$controlForm.addEventListener('submit', onControlFormSubmit);
