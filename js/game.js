@@ -1,43 +1,61 @@
-import { player1, player2 } from './players.js';
-import { readAttackFromForm, generateRandomAttack } from './attackGeneration.js';
+import { initPlayers } from './players.js';
+import { readAttackFromForm, getAttacksJson } from './attackGeneration.js';
 import { logMessageToChat, MESSAGE_TYPE } from './chatLogging.js';
 import { createWinMessageElement, createReloadButton } from './elementCreation.js';
 
 export class Game {
     $arena;
     $controlForm;
- 
+    player1;
+    player2;
+
     constructor() {
         this.$arena = document.querySelector('.arenas');
         this.$controlForm = document.querySelector('.control');
     }
 
-    start = () => {
-        player1.create(this.$arena);
-        player2.create(this.$arena);
-        this.$controlForm.addEventListener('submit', this.onControlFormSubmit);
-        logMessageToChat(MESSAGE_TYPE.start, player1, player2);
+    start = () => {        
+        initPlayers(({player1, player2}) => {
+            this.player1 = player1;
+            this.player2 = player2;
+            this.player1.create(this.$arena);
+            this.player2.create(this.$arena);
+            this.$controlForm.addEventListener('submit', this.onControlFormSubmit);
+            logMessageToChat(MESSAGE_TYPE.start, this.player1, this.player2);
+        })
+        .catch((error) => {
+            console.log(`Error when trying initialize players: ${error}`);
+        });
     }
 
     onControlFormSubmit = (e) => {
         e.preventDefault();
-    
-        const ourAttackResult = readAttackFromForm(player1, this.$controlForm);
-        const enemyAttackResult = generateRandomAttack(player2);
-        player1.tryAttack(ourAttackResult, enemyAttackResult);
-        player2.tryAttack(enemyAttackResult, ourAttackResult);
-    
+        let player1attack = {}, player2attack = {};
+
+        const inputAttack = readAttackFromForm(this.$controlForm);
+        
+        getAttacksJson(inputAttack).then((result) => {
+            player1attack = {...result.player1, player: this.player1};
+            player2attack = {...result.player2, player: this.player2};
+        }).then(() => {
+            this.player1.tryAttack(player1attack, player2attack);
+            this.player2.tryAttack(player2attack, player1attack);
+        }).then(() => {
+            if (this.gameIsOver()) {
+                this.onGameOver();
+            }
+        })
+        .catch((error) => {
+            console.log(`Cannot attack: ${error}`);
+        });
+        
         for (let item of this.$controlForm) {
             item.checked = false;
-        }
-    
-        if (this.gameIsOver()) {
-            this.onGameOver();
         }
     }
 
     onGameOver = () => {
-        const winMessage = this.getWinMessage(player1, player2);
+        const winMessage = this.getWinMessage(this.player1, this.player2);
         this.$arena.append(createWinMessageElement(winMessage));
         this.$arena.append(createReloadButton());
         for (let item of this.$controlForm) {
@@ -46,7 +64,7 @@ export class Game {
     }
 
     gameIsOver = () => {
-        return player1.hp === 0 || player2.hp === 0;
+        return this.player1.hp === 0 || this.player2.hp === 0;
     }
     
     getWinMessage = () => {
@@ -66,7 +84,7 @@ export class Game {
     }
     
     getWinner = () => {
-        if (player1.hp === player2.hp) return null;
-        return player1.hp > player2.hp ? player1 : player2;
+        if (this.player1.hp === this.player2.hp) return null;
+        return this.player1.hp > this.player2.hp ? this.player1 : this.player2;
     }
 }
