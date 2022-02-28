@@ -6,6 +6,12 @@ const PLAYER_ID = {
     secondPlayer: 2
 }
 
+const DEFAULT_PLAYER = {
+    name: 'Sub-Zero default', 
+    img: '../assets/subzero.gif',
+    id: 12
+};
+
 let player1 = {};
 let player2 = {};
 
@@ -22,7 +28,7 @@ class Player {
 
     constructor({name, img: image, avatar}, playerID) {
         this.name = name;
-        this.image = image;
+        this.image = (image || DEFAULT_PLAYER.img);
         this.playerID = playerID;
         this.avatar = avatar;
         this.hp = 100;
@@ -62,37 +68,41 @@ class Player {
     }
 }
 
-const DEFAULT_PLAYER = {
-    name: 'Sub-Zero default', 
-    img: './assets/subzero.gif',
-    id: 12
-};
-
 const getAllCharactersListJson = async() => {
-    return (await fetch(ALL_PLAYERS_URL)).json();
+    return (await fetch(ALL_PLAYERS_URL)).then(result => result.json());
 }
 
 const getRandomCharacterJson = async() => {
-    return (await fetch(RANDOM_PLAYER_URL)).json();
+    try {
+        const response = await fetch(RANDOM_PLAYER_URL);
+        if (response.status < 200 || response.status >= 300) throw Error(`${response.status}: Cannot load random character from server.`);
+        return await response.json();
+    }
+    catch(error) {
+        console.log(`Cannot load player. Details: ${error}`);
+        return DEFAULT_PLAYER;
+    }
+}
+
+const getPlayerCharacterJson = () => {
+    try {
+        const result = JSON.parse(localStorage.getItem('player1'));
+        return result;
+    }
+    catch (error) {
+        console.log(`Cannor get selected player: ${error}`);
+        return DEFAULT_PLAYER;
+    }
 }
 
 export const initPlayers = async(resolve, reject) => {
-    let player1Obj, player2Obj;
+    const player2Obj = await getRandomCharacterJson();
+    player2 = new Player(player2Obj, PLAYER_ID.secondPlayer);
 
-    getRandomCharacterJson().then((result) => {
-        player2Obj = result;
-    })
-    .then(() => {
-        player2 = new Player(player2Obj, PLAYER_ID.secondPlayer);
-    }).catch((error) => {
-        console.log(`Cannot load player: ${error}. Loading default player...`);
-        player2 = new Player(DEFAULT_PLAYER, PLAYER_ID.secondPlayer);
-    }).then(() => {
-        player1Obj = JSON.parse(localStorage.getItem('player1'));
-        player1 = new Player(player1Obj, PLAYER_ID.firstPlayer);
+    const player1Obj = getPlayerCharacterJson();
+    player1 = new Player(player1Obj, PLAYER_ID.firstPlayer);
 
-        resolve({player1, player2});
-    });
+    resolve({player1, player2});
 }
 
 export default {initPlayers};
