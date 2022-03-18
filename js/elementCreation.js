@@ -3,7 +3,7 @@ export const createReloadButton = () => {
     const $reloadButton = createElement('button', 'button');
 
     $reloadButton.innerText = 'Restart';
-    $reloadButton.addEventListener('click', () => {window.location.reload();});
+    $reloadButton.addEventListener('click', () => {window.location.pathname = './index.html';});
 
     $reloadWrap.append($reloadButton);
     return $reloadWrap;
